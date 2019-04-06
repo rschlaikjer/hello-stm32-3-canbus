@@ -28,12 +28,12 @@ void init() {
   // mode to GPIO_MODE_AF (alternate function). We also do not need a pullup
   // or pulldown resistor on this pin, since the peripheral will handle
   // keeping the line high when nothing is being transmitted.
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO10);
   // Now that we have put the pin into alternate function mode, we need to
   // select which alternate function to use. PA9 can be used for several
   // alternate functions - Timer 15, USART1 TX, Timer 1, and on some devices
   // I2C. Here, we want alternate function 1 (USART1_TX)
-  gpio_set_af(GPIOA, GPIO_AF1, GPIO9);
+  gpio_set_af(GPIOA, GPIO_AF1, GPIO9 | GPIO10);
   // Now that the pins are configured, we can configure the USART itself.
   // First, let's set the baud rate at 115200
   usart_set_baudrate(USART1, 115200);
@@ -44,14 +44,24 @@ void init() {
   // One stop bit
   usart_set_stopbits(USART1, USART_CR2_STOPBITS_1);
   // For a debug console, we only need unidirectional transmit
-  usart_set_mode(USART1, USART_MODE_TX);
+  usart_set_mode(USART1, USART_MODE_TX_RX);
   // No flow control
   usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
   // Enable the peripheral
   usart_enable(USART1);
+
+  // Enable interrupts for tx/rx
+  nvic_enable_irq(NVIC_USART1_IRQ);
+  usart_enable_rx_interrupt(USART1);
+  usart_enable_tx_interrupt(USART1);
 }
 
-void put(char c) { _tx_buffer.push(c); }
+void put(char c) {
+  _tx_buffer.push(c);
+  usart_enable_tx_interrupt(USART1);
+}
+
+bool get(char *c) { return _rx_buffer.pop(*c); }
 
 void flush() {
   while (_tx_buffer.available()) {

@@ -9,6 +9,7 @@ namespace Uart {
 
 void init();
 void put(char c);
+bool get(char *c);
 void flush();
 void isr();
 
