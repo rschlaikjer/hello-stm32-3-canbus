@@ -85,7 +85,6 @@ void init() {
   // Configure clocks
   rcc_clock_setup_in_hse_8mhz_out_64mhz();
   rcc_periph_clock_enable(RCC_GPIOA);
-  rcc_periph_clock_enable(RCC_GPIOB);
 
   // Initialize USART
   Uart::init();
