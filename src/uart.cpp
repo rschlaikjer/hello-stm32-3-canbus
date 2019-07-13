@@ -2,6 +2,10 @@
 #include <stdarg.h>
 #include <unistd.h>
 
+#ifndef STM32F1
+#define STM32F1
+#endif
+
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
@@ -28,15 +32,25 @@ void init() {
   // mode to GPIO_MODE_AF (alternate function). We also do not need a pullup
   // or pulldown resistor on this pin, since the peripheral will handle
   // keeping the line high when nothing is being transmitted.
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO10);
+  gpio_set_mode(GPIOA,
+		GPIO_MODE_OUTPUT_50_MHZ,
+		GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+		GPIO_USART1_TX);
+
+  gpio_set_mode(GPIOA,
+    GPIO_MODE_INPUT,
+    GPIO_CNF_INPUT_FLOAT,
+    GPIO_USART1_RX);
+	
   // Now that we have put the pin into alternate function mode, we need to
   // select which alternate function to use. PA9 can be used for several
   // alternate functions - Timer 15, USART1 TX, Timer 1, and on some devices
   // I2C. Here, we want alternate function 1 (USART1_TX)
-  gpio_set_af(GPIOA, GPIO_AF1, GPIO9 | GPIO10);
+  //gpio_set_af(GPIOA, GPIO_AF1, GPIO9 | GPIO10);
+
   // Now that the pins are configured, we can configure the USART itself.
   // First, let's set the baud rate at 115200
-  usart_set_baudrate(USART1, 115200);
+  usart_set_baudrate(USART1, 9600);
   // Each datum is 8 bits
   usart_set_databits(USART1, 8);
   // No parity bit
