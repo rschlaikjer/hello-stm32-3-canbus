@@ -11,6 +11,18 @@
 #include <can.hpp>
 #include <uart.hpp>
 
+//#define BLUEPILL
+
+#ifndef BLUEPILL
+   #define LED_RCC_GPIO RCC_GPIOA
+   #define LED_GPIO GPIOA
+   #define LED_PIN GPIO5
+#else
+   #define LED_RCC_GPIO RCC_GPIOC
+   #define LED_GPIO GPIOC
+   #define LED_PIN GPIO13
+#endif
+
 void rcc_clock_setup_in_hse_8mhz_out_64mhz(void);
 void init();
 void loop();
@@ -85,7 +97,8 @@ void init() {
   // Configure clocks
   rcc_clock_setup_in_hse_8mhz_out_64mhz();
   rcc_periph_clock_enable(RCC_GPIOA);
-
+  rcc_periph_clock_enable(LED_RCC_GPIO);
+  
   // Initialize USART
   Uart::init();
   printf("\n\nUART Ready\n");
@@ -95,12 +108,12 @@ void init() {
   printf("CAN Ready\n");
 
   	gpio_set_mode(
-		GPIOA,
+		LED_GPIO,
 		GPIO_MODE_OUTPUT_2_MHZ,
 		GPIO_CNF_OUTPUT_PUSHPULL,
-		GPIO5);
+		LED_PIN);
 
-    gpio_set(GPIOA, GPIO5);
+    gpio_set(LED_GPIO, LED_PIN);
 }
 
 void loop() {
@@ -108,7 +121,7 @@ void loop() {
   // and send each one over the CAN bus as a single message.
   char c;
   while (Uart::get(&c)) {
-    gpio_set(GPIOA, GPIO5);
+    gpio_set(LED_GPIO, LED_PIN);
     Uart::put(c);
     CAN::Frame frame;
     frame.id = 5;
@@ -117,20 +130,20 @@ void loop() {
     frame.len = 1;
     frame.data[0] = c;
     CAN::transmit(frame);
-    gpio_clear(GPIOA, GPIO5);
+    gpio_clear(LED_GPIO, LED_PIN);
   }
 
   // Loop over any CAN frames pending in the CAN buffer, and print out
   // the ID of the message and all the data bytes.
   CAN::Frame frame;
   while (CAN::pop(frame)) {
-    gpio_set(GPIOA, GPIO5);
+    gpio_set(LED_GPIO, LED_PIN);
     // Do something with the received frame
     printf("Rx ID: %u Data: ", frame.id);
     for (int i = 0; i < frame.len; i++) {
       printf("%02x:%c", frame.data[i], frame.data[i]);
     }
     printf("\n");
-    gpio_clear(GPIOA, GPIO5);
+    gpio_clear(LED_GPIO, LED_PIN);
   }
 }
