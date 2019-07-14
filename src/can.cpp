@@ -1,6 +1,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifndef STM32F1
+#define STM32F1
+#endif
+
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/can.h>
 #include <libopencm3/stm32/gpio.h>
@@ -17,6 +21,8 @@ Queue<Frame, 64> msg_queue;
 
 void init() {
   // Enable clock to the CAN peripheral & relevant IO port
+  rcc_periph_clock_enable(RCC_AFIO);
+  rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_CAN1EN);
   rcc_periph_clock_enable(RCC_CAN1);
 
   // Reset the can peripheral
@@ -69,11 +75,11 @@ void init() {
       // Resync time quanta jump width
       CAN_BTR_SJW_1TQ, // 16,
       // Time segment 1 time quanta width
-      CAN_BTR_TS1_11TQ, // 13,
+      CAN_BTR_TS1_13TQ, // 13,
       // Time segment 2 time quanta width
-      CAN_BTR_TS2_4TQ, // 2,
+      CAN_BTR_TS2_2TQ, // 2,
       // Baudrate prescaler
-      6,
+      4,
 
       // Loopback mode
       // If set, CAN can transmit but not receive
@@ -107,12 +113,22 @@ void init() {
 
   // Enable CAN interrupts for FIFO message pending (FMPIE)
   can_enable_irq(CAN1, CAN_IER_FMPIE0);
-  nvic_enable_irq(NVIC_CEC_CAN_IRQ);
+  nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
+	nvic_enable_irq(NVIC_CAN_RX1_IRQ);
+  //nvic_enable_irq(NVIC_CEC_CAN_IRQ);
 
   // Route the can to the relevant pins
-  const uint16_t pins = GPIO11 | GPIO12;
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, pins);
-  gpio_set_af(GPIOA, GPIO_AF4, pins);
+  //const uint16_t pins = GPIO11 | GPIO12;
+  //gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, pins);
+  //gpio_set_af(GPIOA, GPIO_AF4, pins);
+
+	rcc_periph_clock_enable(RCC_GPIOA);
+	gpio_set_mode(GPIOA,GPIO_MODE_OUTPUT_50_MHZ,GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,GPIO_CAN_TX);
+	gpio_set_mode(GPIOA,GPIO_MODE_INPUT,GPIO_CNF_INPUT_FLOAT,GPIO_CAN_RX);
+
+	gpio_primary_remap(                         // Map CAN1 to use PA11/PA12
+	    AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON,      // Optional
+			AFIO_MAPR_CAN1_REMAP_PORTA);            // CAN_RX=PA11, CAN_TX=PA12
 }
 
 int transmit(Frame &frame) {
@@ -149,4 +165,5 @@ bool pop(Frame &out) { return msg_queue.pop(out); }
 
 } // namespace CAN
 
-void cec_can_isr(void) { CAN::isr(); }
+void usb_lp_can_rx0_isr(void) { CAN::isr(); }
+void can_rx1_isr(void) { CAN::isr(); }

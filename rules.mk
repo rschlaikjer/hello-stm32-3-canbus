@@ -24,6 +24,7 @@ CSTD		?= -std=c99
 # Source files
 
 SRCDIR := src/
+BUILDDIR := src/
 CPP_SOURCES := $(shell find $(SRCDIR) -type f -name *.cpp)
 C_SOURCES := $(shell find $(SRCDIR) -type f -name *.c)
 OBJS += $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CPP_SOURCES:.cpp=.o))
@@ -116,7 +117,7 @@ LDLIBS		+= -Wl,--start-group -lc -lgcc -lstdc++ -lnosys -Wl,--end-group -lm
 .SECONDEXPANSION:
 .SECONDARY:
 
-all: elf size
+all: elf bin size
 
 size: $(BINARY).size
 elf: $(BINARY).elf

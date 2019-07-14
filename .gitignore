@@ -7,3 +7,6 @@
 *.map
 *.lst
 gen/
+.vscode/launch.json
+.vscode/settings.json
+.vscode/tasks.json
