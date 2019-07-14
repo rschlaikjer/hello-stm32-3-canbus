@@ -165,7 +165,5 @@ bool pop(Frame &out) { return msg_queue.pop(out); }
 
 } // namespace CAN
 
-//void cec_can_isr(void) { CAN::isr(); }
-
 void usb_lp_can_rx0_isr(void) { CAN::isr(); }
 void can_rx1_isr(void) { CAN::isr(); }
